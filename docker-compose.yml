@@ -1,0 +1,47 @@
+version: "3.7"
+services:
+
+  ingest:
+    build:
+      context: ./ingest
+    environment:
+      - LINODE_TOKEN
+    volumes:
+      - ./ingest:/app
+      - ./ingest/config:/etc/ingest
+      - ingest-data:/var/lib/ingest/data
+    networks:
+      - backend
+
+  vector:
+    image: timberio/vector:0.8.X-alpine
+    volumes:
+      - ./vector/config:/etc/vector
+    networks:
+      - backend
+
+  delivery:
+    build:
+      context: ./delivery
+    volumes:
+      - ./delivery/config:/etc/delivery
+      - delivery-data:/var/lib/delivery/data
+    networks:
+      - backend
+
+  dashboard:
+    build:
+      context: ./dashboard
+    volumes:
+      - ./dashboard/config:/etc/dashboard
+    networks:
+      - backend
+      - frontend
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  ingest-data:
+  delivery-data:
