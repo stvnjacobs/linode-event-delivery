@@ -20,8 +20,13 @@ data_dir = "/var/lib/vector"
 [sources.in]
   type = "stdin"
 
+[sources.ingest]
+  type = "socket"
+  mode = "tcp"
+  address = "0.0.0.0:9000"
+
 # Output data
 [sinks.out]
-  inputs   = ["in"]
+  inputs   = ["in", "ingest"]
   type     = "console"
   encoding = "text"
