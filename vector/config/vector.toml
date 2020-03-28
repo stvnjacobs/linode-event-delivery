@@ -25,8 +25,21 @@ data_dir = "/var/lib/vector"
   mode = "tcp"
   address = "0.0.0.0:9000"
 
+# Transform data
+[transforms.json]
+  type = "json_parser"
+  inputs = ["ingest"]
+  field = "message"
+
 # Output data
 [sinks.out]
   type     = "console"
   inputs   = ["in", "ingest"]
   encoding = "text"
+
+[sinks.elasticsearch]
+  type        = "elasticsearch"
+  inputs      = ["json"]
+  healthcheck = true
+  host        = "http://elasticsearch:9200"
+  index       = "linode-account-events-%F"

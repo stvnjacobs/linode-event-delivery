@@ -18,30 +18,51 @@ services:
     volumes:
       - ./vector/config:/etc/vector
     networks:
+      - elastic
       - backend
 
   delivery:
     build:
       context: ./delivery
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    environment:
+      - discovery.type=single-node
     volumes:
       - ./delivery/config:/etc/delivery
       - delivery-data:/var/lib/delivery/data
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
     networks:
       - backend
+      - elastic
 
   dashboard:
     build:
       context: ./dashboard
     volumes:
       - ./dashboard/config:/etc/dashboard
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.1
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     networks:
       - backend
       - frontend
+      - elastic
 
 networks:
   frontend:
   backend:
+  elastic:
+    driver: bridge
 
 volumes:
   ingest-data:
   delivery-data:
+  es-data:
+    driver: local
