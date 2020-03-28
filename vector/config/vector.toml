@@ -27,6 +27,6 @@ data_dir = "/var/lib/vector"
 
 # Output data
 [sinks.out]
-  inputs   = ["in", "ingest"]
   type     = "console"
+  inputs   = ["in", "ingest"]
   encoding = "text"
