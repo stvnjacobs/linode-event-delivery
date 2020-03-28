@@ -1,11 +1,13 @@
-FROM golang:1.14
+FROM golang:1.14-buster
 MAINTAINER Steven Jacobs <sjacobs@linode.com>
+
+RUN apt-get -yq update && \
+    apt-get -yq install make
 
 COPY . /app
 
 WORKDIR /app
 
-RUN go get -v -t -d ./... && \
-    go build
+RUN make build
 
-CMD ["go", "run", "."]
+CMD ["make", "run"]
