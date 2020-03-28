@@ -1,5 +1,9 @@
 # linode-event-delivery
 
+## Requirements
+
+`LINODE_TOKEN` with `read` scope on `Account` and `Events`
+
 ## Components
 
 ### ingest
