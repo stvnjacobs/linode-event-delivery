@@ -29,6 +29,7 @@ data_dir = "/var/lib/vector"
 [transforms.json]
   type = "json_parser"
   inputs = ["socket"]
+  drop_invalid = true
   field = "message"
 
 # Output data
