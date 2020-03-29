@@ -20,6 +20,8 @@ services:
     networks:
       - elastic
       - backend
+    depends_on:
+      - elasticsearch
 
 #  delivery:
 #    build:
@@ -59,6 +61,8 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     networks:
       - elastic
+    depends_on:
+      - elasticsearch
 
 networks:
   frontend:
