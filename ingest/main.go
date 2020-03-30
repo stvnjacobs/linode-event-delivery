@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -181,32 +182,31 @@ func listNewLinodeEvents(db *badger.DB, linode linodego.Client, sourceID string)
 	return filteredEvents
 }
 
-func (service IngestService) Start() {
-	for source, sourceConfig := range config.Sources {
-		client := createLinodeClient(sourceConfig)
+func (service IngestService) Start(source string, sourceConfig source) {
+	client := createLinodeClient(sourceConfig)
 
-		interval, err := time.ParseDuration(sourceConfig.Interval)
-		if err != nil {
-			log.Fatal(err)
-		}
+	interval, err := time.ParseDuration(sourceConfig.Interval)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		c := time.Tick(interval)
+	c := time.Tick(interval)
 
-		for _ = range c {
-			go func() {
-				events := listNewLinodeEvents(db, client, source)
+	for _ = range c {
+		go func() {
+			log.Print(fmt.Sprintf("checking for new events source=%s", source))
+			events := listNewLinodeEvents(db, client, source)
 
-				for _, event := range events {
-					// add extra info
-					// TODO: fix odd type change
-					e := populateLinodeEvent(event)
-					// send it
-					forwardLinodeEvent(e, config.Sink)
-					// mark it as sent
-					markLinodeEventAsSent(db, event, source)
-				}
-			}()
-		}
+			for _, event := range events {
+				// add extra info
+				// TODO: fix odd type change
+				e := populateLinodeEvent(event)
+				// send it
+				forwardLinodeEvent(e, config.Sink)
+				// mark it as sent
+				markLinodeEventAsSent(db, event, source)
+			}
+		}()
 	}
 }
 
@@ -226,5 +226,10 @@ func main() {
 		Config: config,
 	}
 
-	service.Start()
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(config.Sources))
+	for source, sourceConfig := range config.Sources {
+		go service.Start(source, sourceConfig)
+	}
+	waitGroup.Wait()
 }
