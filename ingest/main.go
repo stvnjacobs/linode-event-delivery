@@ -31,7 +31,8 @@ type source struct {
 	ID       string
 	Type     string
 	Token    string
-	Interval int
+	// TODO: handle time.Duration right
+	Interval string
 }
 
 type sink struct {
@@ -187,16 +188,27 @@ func (service IngestService) Start() {
 	for source, sourceConfig := range config.Sources {
 		client := createLinodeClient(sourceConfig)
 
-		events := listNewLinodeEvents(db, client, source)
+		interval, err := time.ParseDuration(sourceConfig.Interval)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		for _, event := range events {
-			// add extra info
-			// TODO: fix odd type change
-			e := populateLinodeEvent(event)
-			// send it
-			forwardLinodeEvent(e, config.Sink)
-			// mark it as sent
-			markLinodeEventAsSent(db, event, source)
+		c := time.Tick(interval)
+
+		for _ = range c {
+			go func() {
+				events := listNewLinodeEvents(db, client, source)
+
+				for _, event := range events {
+					// add extra info
+					// TODO: fix odd type change
+					e := populateLinodeEvent(event)
+					// send it
+					forwardLinodeEvent(e, config.Sink)
+					// mark it as sent
+					markLinodeEventAsSent(db, event, source)
+				}
+			}()
 		}
 	}
 }

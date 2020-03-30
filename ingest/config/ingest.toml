@@ -1,5 +1,4 @@
 # persistence
-
 [db]
 path = "/var/lib/ingest/data/db"
 
@@ -9,6 +8,7 @@ path = "/var/lib/ingest/data/db"
   [sources.foo]
   type = "linode"
   token = "CHANGEME"
+  interval = "10s" # https://golang.org/pkg/time/#ParseDuration
 
 # where to send it
 [sink]
