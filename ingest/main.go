@@ -83,7 +83,7 @@ func filterNewLinodeEvents(db *badger.DB, events []linodego.Event, sourceID stri
 
 func isEventNew(db *badger.DB, event linodego.Event, sourceID string) bool {
 	// TODO: make prefix configurable
-	prefix := []byte(fmt.Sprintf("linode-account-event-%s-", sourceID))
+	prefix := []byte(fmt.Sprintf("linode-account-event-%s-%s-", sourceID, event.Status))
 	isNew := false
 
 	err := db.View(func(txn *badger.Txn) error {
