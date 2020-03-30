@@ -108,7 +108,7 @@ func isEventNew(db *badger.DB, event linodego.Event, sourceID string) bool {
 // TODO: stop passing around just the db
 func markLinodeEventAsSent(db *badger.DB, event linodego.Event, sourceID string) {
 	// TODO: make prefix configurable
-	prefix := []byte(fmt.Sprintf("linode-account-event-%s-", sourceID))
+	prefix := []byte(fmt.Sprintf("linode-account-event-%s-%s-", sourceID, event.Status))
 
 	err := db.Update(func(txn *badger.Txn) error {
 		_ = txn.Set([]byte(fmt.Sprintf("%s-%d", prefix, event.ID)), []byte(strconv.Itoa(1)))
