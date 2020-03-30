@@ -143,7 +143,7 @@ func forwardLinodeEvent(event LinodeEvent, sink sink) {
 
 	// send to socket
 	fmt.Fprintf(conn, string(message)+"\n")
-	log.Print(fmt.Printf("sent %s", message))
+	log.Print(fmt.Sprintf("sent %s", message))
 }
 
 func createLinodeClient(config source) linodego.Client {
