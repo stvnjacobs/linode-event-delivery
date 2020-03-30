@@ -201,7 +201,7 @@ func (service IngestService) Start(source string, sourceConfig source) {
 
 func main() {
 	// config
-	if _, err := toml.DecodeFile("/etc/ingest/ingest.toml", &config); err != nil {
+	if _, err := toml.DecodeFile("/etc/source/source.toml", &config); err != nil {
 		log.Fatal(err)
 	}
 

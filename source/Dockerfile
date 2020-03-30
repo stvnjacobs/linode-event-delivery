@@ -8,4 +8,4 @@ WORKDIR /app
 RUN go get -v -t -d ./... \
  && go build .
 
-CMD ["linode-event-delivery"]
+CMD ["/app/linode-event-source"]
