@@ -152,9 +152,6 @@ func createLinodeClient(config source) linodego.Client {
 	return client
 }
 
-// store lowest event.ID which all lower event.IDs are 100% completed
-// find the page of the eventID and only query those pages
-// send along changes
 func listNewLinodeEvents(db *badger.DB, linode linodego.Client, sourceID string) []linodego.Event {
 	filter := fmt.Sprintf("{}")
 	opts := linodego.NewListOptions(1, filter)
