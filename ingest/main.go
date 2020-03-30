@@ -60,7 +60,6 @@ type LinodeEvent struct {
 
 // PopulateLinodeEvent is responsible for taking a linodego.Event and adding additional metadata
 func populateLinodeEvent(event linodego.Event, source string) LinodeEvent {
-	log.Print("consider it populated.")
 	return LinodeEvent{
 		Source:    source,
 		Event:     event,
