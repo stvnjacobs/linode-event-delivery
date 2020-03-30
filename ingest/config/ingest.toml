@@ -1,0 +1,17 @@
+# persistence
+
+[db]
+path = "/var/lib/ingest/data/db"
+
+# what collect
+[sources]
+
+  [sources.foo]
+  id = "foo"
+  type = "linode"
+  token = "CHANGEME"
+
+# where to send it
+[sink]
+type = "socket"
+url = "vector:9000"

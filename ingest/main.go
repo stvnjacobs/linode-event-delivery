@@ -4,79 +4,86 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/linode/linodego"
+	"golang.org/x/oauth2"
 	"log"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 	"time"
 
-	"github.com/linode/linodego"
-	"golang.org/x/oauth2"
+	"github.com/BurntSushi/toml"
 
 	badger "github.com/dgraph-io/badger/v2"
 )
 
-const (
-	refreshIntervalSec = 10
-)
+type tomlConfig struct {
+	DB      database
+	Sink    sink
+	Sources map[string]source
+}
+
+type database struct {
+	Path string
+}
+
+type source struct {
+	ID       string
+	Type     string
+	Token    string
+	Interval int
+}
+
+type sink struct {
+	Type string
+	// TODO: handle url right.
+	URL string
+}
+
+var config tomlConfig
 
 var db *badger.DB
 
-// TODO: investigate other shutdown handlers.
-var shutdownCh chan struct{}
+type IngestService struct {
+	DB     *badger.DB
+	Config tomlConfig
+}
 
 // LinodeEvent represents a linodego.Event with additional metadata
 type LinodeEvent struct {
-	Account string         `json:"account"`
-	Event   linodego.Event `json:"event"`
+	Account   string         `json:"account"`
+	Event     linodego.Event `json:"event"`
+	Timestamp time.Time      `json:"timestamp"`
 }
 
-// VectorLogEvent represents a vector log event
-// https://vector.dev/docs/about/data-model/log/
-type VectorLogEvent struct {
-	Host      string      `json:"host"`
-	Message   LinodeEvent `json:"message"`
-	Timestamp time.Time   `json:"timestamp"`
-}
-
-// store lowest event.ID which all lower event.IDs are 100% completed
-// find the page of the eventID and only query those pages
-// send along changes
-func ListNewLinodeEvents(db *badger.DB, linode linodego.Client) []linodego.Event {
-	filter := fmt.Sprintf("{}")
-	opts := linodego.NewListOptions(1, filter)
-
-	allEvents, err := linode.ListEvents(context.Background(), opts)
-	if err != nil {
-		log.Fatal("Error getting Events, expected struct, got error %v", err)
+// PopulateLinodeEvent is responsible for taking a linodego.Event and adding additional metadata
+func populateLinodeEvent(event linodego.Event) LinodeEvent {
+	log.Print("consider it populated.")
+	return LinodeEvent{
+		Account:   "foo",
+		Event:     event,
+		Timestamp: time.Now(),
 	}
-
-	filteredEvents := FilterNewLinodeEvents(db, allEvents)
-
-	return filteredEvents
 }
 
-func FilterNewLinodeEvents(db *badger.DB, events []linodego.Event) []linodego.Event {
+func filterNewLinodeEvents(db *badger.DB, events []linodego.Event, sourceID string) []linodego.Event {
 	var newEvents []linodego.Event
 
 	for _, event := range events {
-		if isEventNew(db, event) {
-			fmt.Println("I seent a new event!")
+		if isEventNew(db, event, sourceID) {
+			log.Print("I seent a new event!")
 			newEvents = append(newEvents, event)
 		} else {
-			fmt.Println("I already seent that event. Boring!")
+			log.Print("I already seent that event. Boring!")
 		}
 	}
 
 	return newEvents
 }
 
-func isEventNew(db *badger.DB, event linodego.Event) bool {
+func isEventNew(db *badger.DB, event linodego.Event, sourceID string) bool {
 	// TODO: make prefix configurable
-	prefix := []byte("linode-account-event")
+	prefix := []byte(fmt.Sprintf("linode-account-event-%s-", sourceID))
 	isNew := false
 
 	err := db.View(func(txn *badger.Txn) error {
@@ -97,11 +104,10 @@ func isEventNew(db *badger.DB, event linodego.Event) bool {
 	return isNew
 }
 
-// TODO: update event as Sent not Seen
 // TODO: stop passing around just the db
-func MarkNewLinodeEventAsSeen(db *badger.DB, event linodego.Event) {
+func markLinodeEventAsSent(db *badger.DB, event linodego.Event, sourceID string) {
 	// TODO: make prefix configurable
-	prefix := []byte("linode-account-event")
+	prefix := []byte(fmt.Sprintf("linode-account-event-%s-", sourceID))
 
 	err := db.Update(func(txn *badger.Txn) error {
 		_ = txn.Set([]byte(fmt.Sprintf("%s-%d", prefix, event.ID)), []byte(strconv.Itoa(1)))
@@ -114,27 +120,16 @@ func MarkNewLinodeEventAsSeen(db *badger.DB, event linodego.Event) {
 	}
 }
 
-func MarshalLinodeEvent(event linodego.Event) VectorLogEvent {
-	return VectorLogEvent{
-		Host: "foo",
-		Message: LinodeEvent{
-			Account: "bar",
-			Event:   event,
-		},
-		Timestamp: time.Now(),
-	}
-}
-
 // TODO: FilterLinodeEvent
 //	switch event.Entity.Type {
 //	case "community_like":
-//		fmt.Printf("info: skipping event. id=%d action=%s type=%s", event.ID, event.Action, event.Entity.Type)
+//		log.Print("info: skipping event. id=%d action=%s type=%s", event.ID, event.Action, event.Entity.Type)
 //	default:
-//		fmt.Printf("entity: %v\nevent: %v\n", event.Entity.Type, event)
+//		log.Print("entity: %v\nevent: %v\n", event.Entity.Type, event)
 //	}
 
-func ForwardVectorLogEvent(event VectorLogEvent) {
-	conn, err := net.Dial("tcp", "vector:9000")
+func forwardLinodeEvent(event LinodeEvent, sink sink) {
+	conn, err := net.Dial("tcp", sink.URL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -148,30 +143,16 @@ func ForwardVectorLogEvent(event VectorLogEvent) {
 
 	// send to socket
 	fmt.Fprintf(conn, string(message)+"\n")
+	log.Print(fmt.Printf("sent %s", message))
 }
 
-func init() {
-	// Create channel to listen to OS interrupt signals
-	shutdownCh := make(chan os.Signal, 1)
-	signal.Notify(shutdownCh, syscall.SIGINT, syscall.SIGTERM)
-	go onExit()
-
-	// TODO: update path to /var/lib/ingest/data/badger
-	// TODO: learn how to do errors right
-	db, _ = badger.Open(badger.DefaultOptions("/tmp/badger"))
-}
-
-func onExit() {
-	<-shutdownCh
-	db.Close()
-}
-
-func main() {
-	apiKey, ok := os.LookupEnv("LINODE_TOKEN")
-	if !ok {
-		log.Fatal("Could not find LINODE_TOKEN, please assert it is set.")
-	}
-	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: apiKey})
+func createLinodeClient(config source) linodego.Client {
+	// TODO: environment variable source configs
+	//apiKey, ok := os.LookupEnv("LINODE_TOKEN")
+	//if !ok {
+	//	log.Fatal("Could not find LINODE_TOKEN, please assert it is set.")
+	//}
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: config.Token})
 
 	oauth2Client := &http.Client{
 		Transport: &oauth2.Transport{
@@ -179,13 +160,62 @@ func main() {
 		},
 	}
 
-	linodeClient := linodego.NewClient(oauth2Client)
-	//linodeClient.SetDebug(true)
+	client := linodego.NewClient(oauth2Client)
+	//client.SetDebug(true)
 
-	events := ListNewLinodeEvents(db, linodeClient)
+	return client
+}
 
-	for _, event := range events {
-		ForwardVectorLogEvent(MarshalLinodeEvent(event))
-		MarkNewLinodeEventAsSeen(db, event)
+// store lowest event.ID which all lower event.IDs are 100% completed
+// find the page of the eventID and only query those pages
+// send along changes
+func listNewLinodeEvents(db *badger.DB, linode linodego.Client, sourceID string) []linodego.Event {
+	filter := fmt.Sprintf("{}")
+	opts := linodego.NewListOptions(1, filter)
+
+	allEvents, err := linode.ListEvents(context.Background(), opts)
+	if err != nil {
+		log.Fatal("Error getting Events, expected struct, got error %v", err)
 	}
+
+	filteredEvents := filterNewLinodeEvents(db, allEvents, sourceID)
+
+	return filteredEvents
+}
+
+func (service IngestService) Start() {
+	for _, source := range config.Sources {
+		client := createLinodeClient(source)
+
+		events := listNewLinodeEvents(db, client, source.ID)
+
+		for _, event := range events {
+			// add extra info
+			// TODO: fix odd type change
+			e := populateLinodeEvent(event)
+			// send it
+			forwardLinodeEvent(e, config.Sink)
+			// mark it as sent
+			markLinodeEventAsSent(db, event, source.ID)
+		}
+	}
+}
+
+func main() {
+	// config
+	if _, err := toml.DecodeFile("/etc/ingest/ingest.toml", &config); err != nil {
+		log.Fatal(err)
+	}
+
+	// persistence
+	// TODO: learn how to do errors right
+	db, _ = badger.Open(badger.DefaultOptions(config.DB.Path))
+
+	// service
+	service := IngestService{
+		DB:     db,
+		Config: config,
+	}
+
+	service.Start()
 }
