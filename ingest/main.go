@@ -53,16 +53,16 @@ type IngestService struct {
 
 // LinodeEvent represents a linodego.Event with additional metadata
 type LinodeEvent struct {
-	Account   string         `json:"account"`
+	Source    string         `json:"source"`
 	Event     linodego.Event `json:"event"`
 	Timestamp time.Time      `json:"timestamp"`
 }
 
 // PopulateLinodeEvent is responsible for taking a linodego.Event and adding additional metadata
-func populateLinodeEvent(event linodego.Event) LinodeEvent {
+func populateLinodeEvent(event linodego.Event, source string) LinodeEvent {
 	log.Print("consider it populated.")
 	return LinodeEvent{
-		Account:   "foo",
+		Source:    source,
 		Event:     event,
 		Timestamp: time.Now(),
 	}
@@ -200,7 +200,7 @@ func (service IngestService) Start(source string, sourceConfig source) {
 			for _, event := range events {
 				// add extra info
 				// TODO: fix odd type change
-				e := populateLinodeEvent(event)
+				e := populateLinodeEvent(event, source)
 				// send it
 				forwardLinodeEvent(e, config.Sink)
 				// mark it as sent
