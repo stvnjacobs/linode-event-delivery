@@ -138,11 +138,6 @@ func forwardLinodeEvent(event LinodeEvent, sink sink) {
 }
 
 func createLinodeClient(config source) linodego.Client {
-	// TODO: environment variable source configs
-	//apiKey, ok := os.LookupEnv("LINODE_TOKEN")
-	//if !ok {
-	//	log.Fatal("Could not find LINODE_TOKEN, please assert it is set.")
-	//}
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: config.Token})
 
 	oauth2Client := &http.Client{
