@@ -72,10 +72,7 @@ func filterNewLinodeEvents(db *badger.DB, events []linodego.Event, sourceID stri
 
 	for _, event := range events {
 		if isEventNew(db, event, sourceID) {
-			log.Print("I seent a new event!")
 			newEvents = append(newEvents, event)
-		} else {
-			log.Print("I already seent that event. Boring!")
 		}
 	}
 
