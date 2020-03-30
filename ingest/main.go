@@ -174,9 +174,11 @@ func (service IngestService) Start(source string, sourceConfig source) {
 		log.Fatal(err)
 	}
 
+	firstRun := true
+
 	c := time.Tick(interval)
 
-	for _ = range c {
+	for range c {
 		go func() {
 			log.Print(fmt.Sprintf("checking for new events source=%s", source))
 			events := listNewLinodeEvents(db, client, source)
@@ -186,10 +188,14 @@ func (service IngestService) Start(source string, sourceConfig source) {
 				// TODO: fix odd type change
 				e := populateLinodeEvent(event, source)
 				// send it
-				forwardLinodeEvent(e, config.Sink)
+				if ! firstRun {
+					forwardLinodeEvent(e, config.Sink)
+				}
 				// mark it as sent
 				markLinodeEventAsSent(db, event, source)
 			}
+
+			firstRun = false
 		}()
 	}
 }
