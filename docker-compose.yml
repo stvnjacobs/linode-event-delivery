@@ -1,15 +1,15 @@
 version: "3.7"
 services:
 
-  ingest:
+  source:
     build:
-      context: ./ingest
+      context: ./source
     environment:
       - LINODE_TOKEN
     volumes:
-      - ./ingest:/app
-      - ./ingest/config:/etc/ingest
-      - ingest-data:/var/lib/ingest/data
+      - ./source:/app
+      - ./source/config:/etc/source
+      - source-data:/var/lib/source/data
     networks:
       - backend
 
@@ -71,7 +71,7 @@ networks:
     driver: bridge
 
 volumes:
-  ingest-data:
   delivery-data:
+  source-data:
   es-data:
     driver: local

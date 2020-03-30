@@ -1,4 +1,4 @@
-module git.stj.io/stjacobs/linode-event-sink
+module git.stj.io/stjacobs/linode-event-source
 
 go 1.14
 

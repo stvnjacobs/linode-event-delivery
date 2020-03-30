@@ -1,6 +1,6 @@
 # persistence
 [db]
-path = "/var/lib/ingest/data/db"
+path = "/var/lib/source/data/db"
 
 # what collect
 [sources]
