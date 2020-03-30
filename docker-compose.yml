@@ -7,7 +7,6 @@ services:
     environment:
       - LINODE_TOKEN
     volumes:
-      - ./source:/app
       - ./source/config:/etc/source
       - source-data:/var/lib/source/data
     networks:
@@ -23,15 +22,14 @@ services:
     depends_on:
       - elasticsearch
 
-#  delivery:
-#    build:
-#      context: ./delivery
-#    volumes:
-#      - ./delivery/config:/etc/delivery
-#      - delivery-data:/var/lib/delivery/data
-#    networks:
-#      - backend
-#
+  sink:
+    build:
+      context: ./sink
+    volumes:
+      - ./sink/config:/etc/sink
+    networks:
+      - backend
+
 #  dashboard:
 #    build:
 #      context: ./dashboard
@@ -71,7 +69,6 @@ networks:
     driver: bridge
 
 volumes:
-  delivery-data:
   source-data:
   es-data:
     driver: local
