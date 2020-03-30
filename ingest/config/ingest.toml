@@ -7,7 +7,6 @@ path = "/var/lib/ingest/data/db"
 [sources]
 
   [sources.foo]
-  id = "foo"
   type = "linode"
   token = "CHANGEME"
 

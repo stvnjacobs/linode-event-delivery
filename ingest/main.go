@@ -184,10 +184,10 @@ func listNewLinodeEvents(db *badger.DB, linode linodego.Client, sourceID string)
 }
 
 func (service IngestService) Start() {
-	for _, source := range config.Sources {
-		client := createLinodeClient(source)
+	for source, sourceConfig := range config.Sources {
+		client := createLinodeClient(sourceConfig)
 
-		events := listNewLinodeEvents(db, client, source.ID)
+		events := listNewLinodeEvents(db, client, source)
 
 		for _, event := range events {
 			// add extra info
@@ -196,7 +196,7 @@ func (service IngestService) Start() {
 			// send it
 			forwardLinodeEvent(e, config.Sink)
 			// mark it as sent
-			markLinodeEventAsSent(db, event, source.ID)
+			markLinodeEventAsSent(db, event, source)
 		}
 	}
 }
