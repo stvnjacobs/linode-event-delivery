@@ -119,14 +119,6 @@ func markLinodeEventAsSent(db *badger.DB, event linodego.Event, sourceID string)
 	}
 }
 
-// TODO: FilterLinodeEvent
-//	switch event.Entity.Type {
-//	case "community_like":
-//		log.Print("info: skipping event. id=%d action=%s type=%s", event.ID, event.Action, event.Entity.Type)
-//	default:
-//		log.Print("entity: %v\nevent: %v\n", event.Entity.Type, event)
-//	}
-
 func forwardLinodeEvent(event LinodeEvent, sink sink) {
 	conn, err := net.Dial("tcp", sink.URL)
 	if err != nil {
