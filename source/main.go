@@ -118,7 +118,7 @@ func markLinodeEventAsSent(db *badger.DB, event linodego.Event, sourceID string)
 	}
 }
 
-func forwardLinodeEvent(event LinodeEvent, sink sink) {
+func forwardLinodeEvent(event LinodeEvent, sink sink, source string) {
 	conn, err := net.Dial("tcp", sink.URL)
 	if err != nil {
 		log.Fatal(err)
@@ -133,7 +133,7 @@ func forwardLinodeEvent(event LinodeEvent, sink sink) {
 
 	// send to socket
 	fmt.Fprintf(conn, string(message)+"\n")
-	log.Print(fmt.Sprintf("sent %s", message))
+	log.Print(fmt.Sprintf("INFO {source=%s, event=%d}: event forwarded successfully", source, event.Event.ID))
 }
 
 func createLinodeClient(config source) linodego.Client {
@@ -179,7 +179,7 @@ func (service IngestService) Start(source string, sourceConfig source) {
 
 	for range c {
 		go func() {
-			log.Print(fmt.Sprintf("checking for new events source=%s", source))
+			log.Print(fmt.Sprintf("INFO {source=%s}: checking for new events", source))
 			events := listNewLinodeEvents(db, client, source)
 
 			for _, event := range events {
@@ -188,7 +188,7 @@ func (service IngestService) Start(source string, sourceConfig source) {
 				e := populateLinodeEvent(event, source)
 				// send it
 				if ! firstRun {
-					forwardLinodeEvent(e, config.Sink)
+					forwardLinodeEvent(e, config.Sink, source)
 				}
 				// mark it as sent
 				markLinodeEventAsSent(db, event, source)
