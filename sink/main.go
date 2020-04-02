@@ -7,14 +7,28 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/BurntSushi/toml"
+
 	"github.com/slack-go/slack"
 
 	"github.com/linode/linodego"
 	//"golang.org/x/oauth2"
 )
 
-// You more than likely want your "Bot User OAuth Access Token" which starts with "xoxb-"
-var api = slack.New("TOKEN")
+type tomlConfig struct {
+	Slack slackConfig
+}
+
+type slackConfig struct {
+	Channel string
+	Token   string
+}
+
+var api *slack.Client
+
+var config tomlConfig
+
+var channel slack.Channel
 
 // LinodeEvent represents a linodego.Event with additional metadata
 type LinodeEvent struct {
@@ -24,6 +38,16 @@ type LinodeEvent struct {
 }
 
 func main() {
+	// config
+	if _, err := toml.DecodeFile("/etc/sink/sink.toml", &config); err != nil {
+		log.Fatal(err)
+	}
+
+	api = slack.New(config.Slack.Token)
+
+	// TODO: handle bad channel names
+	channel = getSlackChannelByName(config.Slack.Channel)
+
 	http.HandleFunc("/sink-slack", sinkSlackHandler)
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
@@ -39,9 +63,33 @@ func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, le := range les {
-		fmt.Printf("%s - %s %s %s %s\n", le.Source, le.Event.Entity.Type, le.Event.Entity.Label, le.Event.Action, le.Event.Status)
+		message := fmt.Sprintf("%s - %s %s %s %s\n", le.Source, le.Event.Entity.Type, le.Event.Entity.Label, le.Event.Action, le.Event.Status)
+		channelID, _, err := api.PostMessage(channel.ID, slack.MsgOptionText(message, false))
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Print(fmt.Sprintf("INFO {channel=%s} message successfully sent", channelID))
 	}
 }
+
+func getSlackChannelByName(name string) slack.Channel {
+	// TODO: find channels more cleanly
+	var sc slack.Channel
+
+	channels, err := api.GetChannels(true)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, c :=range channels {
+		if c.Name == name {
+			sc = c
+		}
+	}
+
+	return sc
+}
+
 //buf := new(bytes.Buffer)
 //buf.ReadFrom(r.Body)
 //body := buf.String()
