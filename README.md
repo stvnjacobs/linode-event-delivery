@@ -6,11 +6,9 @@
 
 ## Components
 
-### ingest
+### source
 
-```
-linodego events -> vector source
-```
+Pulls events, deduplicates, adds additional metadata and POSTs to configured endpoint.
 
 ### vector
 
@@ -21,10 +19,6 @@ sinks:
 - elasticsearch
 - kafka?
 
-### delivery
+### sink
 
-```
-vector http sink -> slack
-```
-
-can we send it to a websocket?
+Vector POSTs HTTP event, sink forwards it to configured Slack channel.
