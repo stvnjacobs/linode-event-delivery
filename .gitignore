@@ -5,3 +5,5 @@ tmp/
 
 linode-event-source
 linode-event-sink
+
+sink/config/sink.toml
