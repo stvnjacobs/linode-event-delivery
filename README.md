@@ -1,9 +1,5 @@
 # linode-event-delivery
 
-## Requirements
-
-`LINODE_TOKEN` with `read` scope on `Account` and `Events`
-
 ## Components
 
 ### source
@@ -22,3 +18,21 @@ sinks:
 ### sink
 
 Vector POSTs HTTP event, sink forwards it to configured Slack channel.
+
+## Configuration
+
+`LINODE_TOKEN` _(default: `null`)_ **REQUIRED**: Must have with `read` scope on `Account` and `Events`
+
+`LED_CONFIG_DIR` _(default: `./config`)_: Path to configuration e.g. /etc/linode-event-delivery
+
+To get started copy the example configs and edit.
+
+``` sh
+cp ./example ./config
+```
+
+## Usage
+
+``` sh
+docker-compose up -d
+```

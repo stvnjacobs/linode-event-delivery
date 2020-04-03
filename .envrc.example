@@ -1,0 +1,1 @@
+export LED_CONFIG_DIR=./config
