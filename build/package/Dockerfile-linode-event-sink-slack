@@ -1,0 +1,7 @@
+FROM alpine:latest
+
+RUN mkdir /app
+WORKDIR /app
+COPY dist/linode-event-sink-slack .
+
+CMD ["/app/linode-event-sink-slack"]

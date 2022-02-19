@@ -76,7 +76,8 @@ func getSlackChannelByName(name string) slack.Channel {
 	// TODO: find channels more cleanly
 	var sc slack.Channel
 
-	channels, err := api.GetChannels(true)
+	params := slack.GetConversationsParameters{}
+	channels, _, err := api.GetConversations(&params)
 	if err != nil {
 		log.Fatal(err)
 	}

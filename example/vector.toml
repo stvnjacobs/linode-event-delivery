@@ -42,8 +42,9 @@ data_dir = "/var/lib/vector"
   type        = "elasticsearch"
   inputs      = ["json"]
   healthcheck = true
-  host        = "http://elasticsearch:9200"
-  index       = "linode-account-events-%F"
+  endpoint    = "http://elasticsearch:9200"
+  bulk.action = "create"
+  bulk.index  = "linode-account-events-%F"
 
 [sinks.slack]
   type        = "http"

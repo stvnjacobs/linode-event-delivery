@@ -3,7 +3,8 @@ services:
 
   source:
     build:
-      context: ./source
+      context: .
+      dockerfile: build/package/Dockerfile-linode-event-source
     environment:
       - LINODE_TOKEN
     volumes:
@@ -13,7 +14,7 @@ services:
       - backend
 
   vector:
-    image: timberio/vector:0.8.X-alpine
+    image: timberio/vector:latest-alpine
     volumes:
       - ${LED_CONFIG_DIR:-./config}/vector.toml:/etc/vector/vector.toml
     networks:
@@ -24,7 +25,8 @@ services:
 
   sink:
     build:
-      context: ./sink
+      context: .
+      dockerfile: build/package/Dockerfile-linode-event-sink-slack
     volumes:
       - ${LED_CONFIG_DIR:-./config}/sink.toml:/etc/sink/sink.toml
     networks:

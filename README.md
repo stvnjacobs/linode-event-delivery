@@ -28,7 +28,7 @@ Vector POSTs HTTP event, sink forwards it to configured Slack channel.
 To get started copy the example configs and edit.
 
 ``` sh
-cp ./example ./config
+cp -r ./example ./config
 ```
 
 ## Usage
