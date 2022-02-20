@@ -2,15 +2,11 @@
 [db]
 path = "/var/lib/source/data/db"
 
-# what collect
-[sources]
-
-  [sources.foo]
-  type = "linode"
-  token = "CHANGEME"
-  interval = "10s" # https://golang.org/pkg/time/#ParseDuration
+[source]
+url = "https://api.linode.com/v4"
+token = "CHANGEME"
+interval = "10s" # https://golang.org/pkg/time/#ParseDuration
 
 # where to send it
 [sink]
-type = "socket"
 url = "vector:9000"

@@ -32,7 +32,6 @@ var channel slack.Channel
 
 // LinodeEvent represents a linodego.Event with additional metadata
 type LinodeEvent struct {
-	Source    string         `json:"source"`
 	Event     linodego.Event `json:"event"`
 	Timestamp time.Time      `json:"timestamp"`
 }
@@ -63,7 +62,7 @@ func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, le := range les {
-		message := fmt.Sprintf("%s - %s %s %s %s\n", le.Source, le.Event.Entity.Type, le.Event.Entity.Label, le.Event.Action, le.Event.Status)
+		message := fmt.Sprintf("%s %s %s %s\n", le.Event.Entity.Type, le.Event.Entity.Label, le.Event.Action, le.Event.Status)
 		channelID, _, err := api.PostMessage(channel.ID, slack.MsgOptionText(message, false))
 		if err != nil {
 			log.Fatal(err)
@@ -82,7 +81,7 @@ func getSlackChannelByName(name string) slack.Channel {
 		log.Fatal(err)
 	}
 
-	for _, c :=range channels {
+	for _, c := range channels {
 		if c.Name == name {
 			sc = c
 		}

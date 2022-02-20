@@ -19,9 +19,9 @@ import (
 )
 
 type tomlConfig struct {
-	DB      database
-	Sink    sink
-	Sources map[string]source
+	DB     database
+	Source source
+	Sink   sink
 }
 
 type database struct {
@@ -29,9 +29,8 @@ type database struct {
 }
 
 type source struct {
-	ID       string
-	Type     string
-	Token    string
+	URL   string
+	Token string
 	// TODO: handle time.Duration right
 	Interval string
 }
@@ -59,19 +58,18 @@ type LinodeEvent struct {
 }
 
 // PopulateLinodeEvent is responsible for taking a linodego.Event and adding additional metadata
-func populateLinodeEvent(event linodego.Event, source string) LinodeEvent {
+func populateLinodeEvent(event linodego.Event) LinodeEvent {
 	return LinodeEvent{
-		Source:    source,
 		Event:     event,
 		Timestamp: time.Now(),
 	}
 }
 
-func filterNewLinodeEvents(db *badger.DB, events []linodego.Event, sourceID string) []linodego.Event {
+func filterNewLinodeEvents(db *badger.DB, events []linodego.Event) []linodego.Event {
 	var newEvents []linodego.Event
 
 	for _, event := range events {
-		if isEventNew(db, event, sourceID) {
+		if isEventNew(db, event) {
 			newEvents = append(newEvents, event)
 		}
 	}
@@ -79,9 +77,9 @@ func filterNewLinodeEvents(db *badger.DB, events []linodego.Event, sourceID stri
 	return newEvents
 }
 
-func isEventNew(db *badger.DB, event linodego.Event, sourceID string) bool {
+func isEventNew(db *badger.DB, event linodego.Event) bool {
 	// TODO: make prefix configurable
-	prefix := []byte(fmt.Sprintf("linode-account-event-%s-%s-", sourceID, event.Status))
+	prefix := []byte(fmt.Sprintf("linode-account-event-%s-", event.Status))
 	isNew := false
 
 	err := db.View(func(txn *badger.Txn) error {
@@ -103,9 +101,9 @@ func isEventNew(db *badger.DB, event linodego.Event, sourceID string) bool {
 }
 
 // TODO: stop passing around just the db
-func markLinodeEventAsSent(db *badger.DB, event linodego.Event, sourceID string) {
+func markLinodeEventAsSent(db *badger.DB, event linodego.Event) {
 	// TODO: make prefix configurable
-	prefix := []byte(fmt.Sprintf("linode-account-event-%s-%s-", sourceID, event.Status))
+	prefix := []byte(fmt.Sprintf("linode-account-event-%s-", event.Status))
 
 	err := db.Update(func(txn *badger.Txn) error {
 		_ = txn.Set([]byte(fmt.Sprintf("%s-%d", prefix, event.ID)), []byte(strconv.Itoa(1)))
@@ -118,7 +116,7 @@ func markLinodeEventAsSent(db *badger.DB, event linodego.Event, sourceID string)
 	}
 }
 
-func forwardLinodeEvent(event LinodeEvent, sink sink, source string) {
+func forwardLinodeEvent(event LinodeEvent, sink sink) {
 	conn, err := net.Dial("tcp", sink.URL)
 	if err != nil {
 		log.Fatal(err)
@@ -133,7 +131,7 @@ func forwardLinodeEvent(event LinodeEvent, sink sink, source string) {
 
 	// send to socket
 	fmt.Fprintf(conn, string(message)+"\n")
-	log.Print(fmt.Sprintf("INFO {source=%s, event=%d}: event forwarded successfully", source, event.Event.ID))
+	log.Print(fmt.Sprintf("INFO {event=%d}: event forwarded successfully", event.Event.ID))
 }
 
 func createLinodeClient(config source) linodego.Client {
@@ -151,7 +149,7 @@ func createLinodeClient(config source) linodego.Client {
 	return client
 }
 
-func listNewLinodeEvents(db *badger.DB, linode linodego.Client, sourceID string) []linodego.Event {
+func listNewLinodeEvents(db *badger.DB, linode linodego.Client) []linodego.Event {
 	filter := fmt.Sprintf("{}")
 	opts := linodego.NewListOptions(1, filter)
 
@@ -160,15 +158,15 @@ func listNewLinodeEvents(db *badger.DB, linode linodego.Client, sourceID string)
 		log.Fatal("Error getting Events, expected struct, got error %v", err)
 	}
 
-	filteredEvents := filterNewLinodeEvents(db, allEvents, sourceID)
+	filteredEvents := filterNewLinodeEvents(db, allEvents)
 
 	return filteredEvents
 }
 
-func (service IngestService) Start(source string, sourceConfig source) {
-	client := createLinodeClient(sourceConfig)
+func (service IngestService) Start(source source) {
+	client := createLinodeClient(source)
 
-	interval, err := time.ParseDuration(sourceConfig.Interval)
+	interval, err := time.ParseDuration(source.Interval)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,19 +177,19 @@ func (service IngestService) Start(source string, sourceConfig source) {
 
 	for range c {
 		go func() {
-			log.Print(fmt.Sprintf("INFO {source=%s}: checking for new events", source))
-			events := listNewLinodeEvents(db, client, source)
+			log.Print(fmt.Sprintf("INFO: checking for new events"))
+			events := listNewLinodeEvents(db, client)
 
 			for _, event := range events {
 				// add extra info
 				// TODO: fix odd type change
-				e := populateLinodeEvent(event, source)
+				e := populateLinodeEvent(event)
 				// send it
-				if ! firstRun {
-					forwardLinodeEvent(e, config.Sink, source)
+				if !firstRun {
+					forwardLinodeEvent(e, config.Sink)
 				}
 				// mark it as sent
-				markLinodeEventAsSent(db, event, source)
+				markLinodeEventAsSent(db, event)
 			}
 
 			firstRun = false
@@ -216,9 +214,7 @@ func main() {
 	}
 
 	var waitGroup sync.WaitGroup
-	waitGroup.Add(len(config.Sources))
-	for source, sourceConfig := range config.Sources {
-		go service.Start(source, sourceConfig)
-	}
+	waitGroup.Add(1)
+	go service.Start(config.Source)
 	waitGroup.Wait()
 }
