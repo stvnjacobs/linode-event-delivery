@@ -107,8 +107,6 @@ func markLinodeEventAsSent(db *badger.DB, event linodego.Event) {
 
 	err := db.Update(func(txn *badger.Txn) error {
 		_ = txn.Set([]byte(fmt.Sprintf("%s-%d", prefix, event.ID)), []byte(strconv.Itoa(1)))
-		fmt.Sprintf("%s-%d", prefix, event.ID)
-
 		return nil
 	})
 	if err != nil {
