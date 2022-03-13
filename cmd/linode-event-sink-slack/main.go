@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/BurntSushi/toml"
 
@@ -30,12 +29,6 @@ var config tomlConfig
 
 var channel slack.Channel
 
-// LinodeEvent represents a linodego.Event with additional metadata
-type LinodeEvent struct {
-	Event     linodego.Event `json:"event"`
-	Timestamp time.Time      `json:"timestamp"`
-}
-
 func main() {
 	// config
 	if _, err := toml.DecodeFile("/etc/sink/sink.toml", &config); err != nil {
@@ -54,7 +47,7 @@ func main() {
 func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
-	var les []LinodeEvent
+	var les []linodego.Event
 
 	err := decoder.Decode(&les)
 	if err != nil {
@@ -62,7 +55,7 @@ func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, le := range les {
-		message := fmt.Sprintf("%s %s %s %s\n", le.Event.Entity.Type, le.Event.Entity.Label, le.Event.Action, le.Event.Status)
+		message := fmt.Sprintf("%s %s %s %s\n", le.Entity.Type, le.Entity.Label, le.Action, le.Status)
 		channelID, _, err := api.PostMessage(channel.ID, slack.MsgOptionText(message, false))
 		if err != nil {
 			log.Fatal(err)

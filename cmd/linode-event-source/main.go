@@ -50,21 +50,6 @@ type IngestService struct {
 	Config tomlConfig
 }
 
-// LinodeEvent represents a linodego.Event with additional metadata
-type LinodeEvent struct {
-	Source    string         `json:"source"`
-	Event     linodego.Event `json:"event"`
-	Timestamp time.Time      `json:"timestamp"`
-}
-
-// PopulateLinodeEvent is responsible for taking a linodego.Event and adding additional metadata
-func populateLinodeEvent(event linodego.Event) LinodeEvent {
-	return LinodeEvent{
-		Event:     event,
-		Timestamp: time.Now(),
-	}
-}
-
 func filterNewLinodeEvents(db *badger.DB, events []linodego.Event) []linodego.Event {
 	var newEvents []linodego.Event
 
@@ -114,7 +99,7 @@ func markLinodeEventAsSent(db *badger.DB, event linodego.Event) {
 	}
 }
 
-func forwardLinodeEvent(event LinodeEvent, sink sink) {
+func forwardLinodeEvent(event linodego.Event, sink sink) {
 	conn, err := net.Dial("tcp", sink.URL)
 	if err != nil {
 		log.Fatal(err)
@@ -129,7 +114,7 @@ func forwardLinodeEvent(event LinodeEvent, sink sink) {
 
 	// send to socket
 	fmt.Fprintf(conn, string(message)+"\n")
-	log.Print(fmt.Sprintf("INFO {event=%d}: event forwarded successfully", event.Event.ID))
+	log.Print(fmt.Sprintf("INFO {event=%d}: event forwarded successfully", event.ID))
 }
 
 func createLinodeClient(config source) linodego.Client {
@@ -183,12 +168,7 @@ func (service IngestService) Start(source source) {
 			events := listLinodeEventsSince(db, client, lastRun)
 
 			for _, event := range events {
-				// add extra info
-				// TODO: fix odd type change
-				e := populateLinodeEvent(event)
-				// send it
-				forwardLinodeEvent(e, config.Sink)
-				// mark it as sent
+				forwardLinodeEvent(event, config.Sink)
 				markLinodeEventAsSent(db, event)
 			}
 
