@@ -147,11 +147,15 @@ func createLinodeClient(config source) linodego.Client {
 	return client
 }
 
-func listNewLinodeEvents(db *badger.DB, linode linodego.Client) []linodego.Event {
-	filter := fmt.Sprintf("{}")
-	opts := linodego.NewListOptions(1, filter)
+// TODO: handle more than 25 events
+func listLinodeEventsSince(db *badger.DB, linode linodego.Client, since time.Time) []linodego.Event {
+	opts := linodego.ListOptions{
+		PageOptions: &linodego.PageOptions{Page: 1},
+		PageSize:    25,
+		Filter:      fmt.Sprintf(`{"created": {"+gte": "%s"}}`, since.Format("2006-01-02T15:04:05")),
+	}
 
-	allEvents, err := linode.ListEvents(context.Background(), opts)
+	allEvents, err := linode.ListEvents(context.Background(), &opts)
 	if err != nil {
 		log.Fatal("Error getting Events, expected struct, got error %v", err)
 	}
@@ -164,33 +168,31 @@ func listNewLinodeEvents(db *badger.DB, linode linodego.Client) []linodego.Event
 func (service IngestService) Start(source source) {
 	client := createLinodeClient(source)
 
+	lastRun := time.Now()
+
 	interval, err := time.ParseDuration(source.Interval)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	firstRun := true
 
 	c := time.Tick(interval)
 
 	for range c {
 		go func() {
 			log.Print(fmt.Sprintf("INFO: checking for new events"))
-			events := listNewLinodeEvents(db, client)
+			events := listLinodeEventsSince(db, client, lastRun)
 
 			for _, event := range events {
 				// add extra info
 				// TODO: fix odd type change
 				e := populateLinodeEvent(event)
 				// send it
-				if !firstRun {
-					forwardLinodeEvent(e, config.Sink)
-				}
+				forwardLinodeEvent(e, config.Sink)
 				// mark it as sent
 				markLinodeEventAsSent(db, event)
 			}
 
-			firstRun = false
+			lastRun = lastRun.Add(interval)
 		}()
 	}
 }
