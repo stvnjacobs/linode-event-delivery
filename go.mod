@@ -1,4 +1,4 @@
-module git.stj.io/stjacobs/linode-event-source
+module github.com/stvnjacobs/linode-event-source
 
 go 1.17
 
