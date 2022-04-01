@@ -6,8 +6,8 @@
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/linode-event-sink-slack ./cmd/linode-event-sink-slack
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/linode-event-source ./cmd/linode-event-source
+	CGO_ENABLED=0 GOOS=linux go build -o dist/linode-event-sink-slack ./cmd/linode-event-sink-slack
+	CGO_ENABLED=0 GOOS=linux go build -o dist/linode-event-source ./cmd/linode-event-source
 
 .PHONY: build-docker
 build-docker:

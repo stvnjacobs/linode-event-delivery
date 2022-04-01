@@ -1,7 +1,19 @@
-FROM alpine:latest
+FROM golang:1.18 AS builder
 
-RUN mkdir /app
-WORKDIR /app
-COPY dist/linode-event-sink-slack .
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 
-CMD ["/app/linode-event-sink-slack"]
+WORKDIR /usr/src/linode-event-delivery
+
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+COPY . .
+RUN go build -v -o /usr/local/bin/linode-event-sink-slack ./cmd/linode-event-sink-slack
+
+
+FROM scratch
+
+COPY --from=builder /usr/local/bin/linode-event-sink-slack /usr/local/bin/linode-event-sink-slack
+
+CMD ["/usr/local/bin/linode-event-sink-slack"]
