@@ -23,13 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build package
-        env:
-          CGO_ENABLED: 0
-          GOOS: linux
-          GOARCH: amd64
-        run: go build -o dist/${{ matrix.cmd }} cmd/${{ matrix.cmd }}
-
       - name: Build image
         run: docker build -f build/packages/Dockerfile-${{ matrix.cmd }} --tag ${{ matrix.cmd }} --label "runnumber=${GITHUB_RUN_ID}" .
 
