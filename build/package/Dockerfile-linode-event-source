@@ -1,7 +1,19 @@
-FROM alpine:latest
+FROM golang:1.18 AS builder
 
-RUN mkdir /app
-WORKDIR /app
-COPY dist/linode-event-source .
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 
-CMD ["/app/linode-event-source"]
+WORKDIR /usr/src/linode-event-delivery
+
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+COPY . .
+RUN go build -v -o /usr/local/bin/linode-event-source ./cmd/linode-event-source
+
+
+FROM scratch
+
+COPY --from=builder /usr/local/bin/linode-event-source /usr/local/bin/linode-event-source
+
+CMD ["/usr/local/bin/linode-event-source"]
