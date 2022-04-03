@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/linode/linodego"
-	"golang.org/x/oauth2"
 	"log"
 	"net"
 	"net/http"
@@ -13,6 +11,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/linode/linodego"
+	"golang.org/x/oauth2"
 )
 
 type tomlConfig struct {
