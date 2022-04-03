@@ -1,7 +1,7 @@
 FROM golang:1.18-alpine AS builder
 
-ENV CGO_ENABLED=0
-ENV GOOS=linux
+ARG CGO_ENABLED=0
+ARG GOOS=linux
 
 RUN apk --update add ca-certificates git
 RUN update-ca-certificates
