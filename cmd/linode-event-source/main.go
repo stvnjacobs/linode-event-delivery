@@ -77,7 +77,7 @@ func createLinodeClient(config source) linodego.Client {
 }
 
 // TODO: handle more than 25 events
-func listLinodeEventsSince(linode linodego.Client, since time.Time) []linodego.Event {
+func listLinodeEventsSince(linode linodego.Client, since time.Time) ([]linodego.Event, error) {
 	opts := linodego.ListOptions{
 		PageOptions: &linodego.PageOptions{Page: 1},
 		PageSize:    25,
@@ -86,10 +86,10 @@ func listLinodeEventsSince(linode linodego.Client, since time.Time) []linodego.E
 
 	events, err := linode.ListEvents(context.Background(), &opts)
 	if err != nil {
-		log.Fatal("Error getting Events, expected struct, got error %v", err)
+		return []linodego.Event{}, fmt.Errorf("ERROR: failed to list events: %w", err)
 	}
 
-	return events
+	return events, nil
 }
 
 func (service IngestService) Start(source source) {
@@ -106,8 +106,13 @@ func (service IngestService) Start(source source) {
 
 	for range c {
 		go func() {
-			log.Print(fmt.Sprintf("INFO: checking for new events"))
-			events := listLinodeEventsSince(client, lastRun)
+			log.Println("INFO: checking for new events")
+			events, err := listLinodeEventsSince(client, lastRun)
+			if err != nil {
+				// TODO: look into writing to stderr
+				//fmt.Fprintln(os.Stderr, err)
+				log.Println(err)
+			}
 
 			for _, event := range events {
 				forwardLinodeEvent(event, config.Sink)
