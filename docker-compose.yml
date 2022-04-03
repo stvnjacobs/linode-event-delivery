@@ -58,6 +58,5 @@ networks:
   elastic:
 
 volumes:
-  source-data:
   es-data:
     driver: local
