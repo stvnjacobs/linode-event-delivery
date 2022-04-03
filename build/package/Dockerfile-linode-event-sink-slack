@@ -2,6 +2,7 @@ FROM golang:1.18-alpine AS builder
 
 ARG CGO_ENABLED=0
 ARG GOOS=linux
+ARG GOARCH=amd64
 
 RUN apk --update add ca-certificates git
 RUN update-ca-certificates
