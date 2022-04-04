@@ -57,9 +57,12 @@ func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 		message := fmt.Sprintf("%s %s %s %s\n", le.Entity.Type, le.Entity.Label, le.Action, le.Status)
 		channelID, _, err := api.PostMessage(channel.ID, slack.MsgOptionText(message, false))
 		if err != nil {
-			log.Fatal(err)
+			// TODO: look into writing to stderr
+			//fmt.Fprintln(os.Stderr, err)
+			log.Println(err)
+		} else {
+			log.Print(fmt.Sprintf("INFO {channel=%s} message successfully sent", channelID))
 		}
-		log.Print(fmt.Sprintf("INFO {channel=%s} message successfully sent", channelID))
 	}
 }
 
