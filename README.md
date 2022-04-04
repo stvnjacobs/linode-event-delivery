@@ -36,7 +36,13 @@ channel = "notification-linode"
 
 ## Examples
 
-The repository provides an example docker-compose file, showing how to put a tool like [Vector](https://vector.dev) between the source and the sink. Using this topology enables multiple account sources writing to multiple sinks, Slack just being just one of them. To showcase this, the docker-compose file also writes events to an Elasticsearch database, but this could also additionally write to S3, Kafka, or any of the other [sinks that Vector supports](https://vector.dev/docs/reference/configuration/sinks/)
+The repository provides an example docker-compose file, showing how to put a
+tool like [Vector](https://vector.dev) between the source and the sink. Using
+this topology enables multiple account sources writing to multiple sinks, Slack
+just being just one of them. To showcase this, the docker-compose file also
+writes events to an Elasticsearch database, but this could also additionally
+write to S3, Kafka, or any of the other [sinks that Vector
+supports](https://vector.dev/docs/reference/configuration/sinks/)
 
 ### Configuration
 
