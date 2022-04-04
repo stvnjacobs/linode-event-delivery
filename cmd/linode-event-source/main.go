@@ -54,7 +54,7 @@ func forwardLinodeEvent(event linodego.Event, sink sink) {
 
 	// send to socket
 	fmt.Fprintf(conn, string(message)+"\n")
-	log.Print(fmt.Sprintf("INFO {event=%d}: event forwarded successfully", event.ID))
+	log.Printf("INFO {event=%d}: event forwarded successfully", event.ID)
 }
 
 func createLinodeClient(config source) linodego.Client {

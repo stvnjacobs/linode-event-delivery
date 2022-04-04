@@ -61,7 +61,7 @@ func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 			//fmt.Fprintln(os.Stderr, err)
 			log.Println(err)
 		} else {
-			log.Print(fmt.Sprintf("INFO {channel=%s} message successfully sent", channelID))
+			log.Printf("INFO {channel=%s} message successfully sent", channelID)
 		}
 	}
 }
