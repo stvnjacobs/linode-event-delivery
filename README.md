@@ -2,28 +2,43 @@
 
 ## Components
 
-### source
+### `linode-event-source`
 
-Pulls events, deduplicates, adds additional metadata and POSTs to configured endpoint.
+Pulls events and forwards them to configured sink.
 
-### vector
+#### Configuration
 
-https://vector.dev/docs/about/what-is-vector/
+``` toml
+# file: /etc/source/source.toml
 
-sinks:
-- http
-- elasticsearch
-- kafka?
+[source]
+url = "https://api.linode.com/v4"
+token = "CHANGEME" # must have at least "accounts:read_only" and "events:read_only"
+interval = "10s"   # format follows https://golang.org/pkg/time/#ParseDuration
 
-### sink
+[sink]
+url = "localhost:9000"
+```
 
-Vector POSTs HTTP event, sink forwards it to configured Slack channel.
+### `linode-event-sink-slack`
 
-## Configuration
+Handles incoming events, forwarding them to configured Slack channel.
 
-`LINODE_TOKEN` _(default: `null`)_ **REQUIRED**: Must have with `read` scope on `Account` and `Events`
+#### Configuration
 
-`LED_CONFIG_DIR` _(default: `./config`)_: Path to configuration e.g. /etc/linode-event-delivery
+``` toml
+# file: /etc/sink/sink.toml
+
+[slack]
+token = "xoxb-example-token"
+channel = "notification-linode"
+```
+
+## Examples
+
+The repository provides an example docker-compose file, showing how to put a tool like [Vector](https://vector.dev) between the source and the sink. Using this topology enables multiple account sources writing to multiple sinks, Slack just being just one of them. To showcase this, the docker-compose file also writes events to an Elasticsearch database, but this could also additionally write to S3, Kafka, or any of the other [sinks that Vector supports](https://vector.dev/docs/reference/configuration/sinks/)
+
+### Configuration
 
 To get started copy the example configs and edit.
 
