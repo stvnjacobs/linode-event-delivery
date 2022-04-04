@@ -28,8 +28,6 @@ type source struct {
 }
 
 type sink struct {
-	Type string
-	// TODO: handle url right.
 	URL string
 }
 
