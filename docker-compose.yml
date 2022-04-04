@@ -9,7 +9,6 @@ services:
       - LINODE_TOKEN
     volumes:
       - ${LED_CONFIG_DIR:-./config}/source.toml:/etc/source/source.toml
-      - source-data:/var/lib/source/data
     networks:
       - backend
 

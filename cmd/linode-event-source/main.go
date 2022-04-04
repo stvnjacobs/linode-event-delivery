@@ -20,10 +20,6 @@ type tomlConfig struct {
 	Sink   sink
 }
 
-type database struct {
-	Path string
-}
-
 type source struct {
 	URL   string
 	Token string
