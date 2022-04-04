@@ -1,9 +1,7 @@
-# persistence
 [source]
 url = "https://api.linode.com/v4"
 token = "CHANGEME"
 interval = "10s" # https://golang.org/pkg/time/#ParseDuration
 
-# where to send it
 [sink]
 url = "vector:9000"
