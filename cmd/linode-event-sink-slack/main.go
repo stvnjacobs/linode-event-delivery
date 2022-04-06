@@ -36,8 +36,13 @@ func main() {
 
 	api = slack.New(config.Slack.Token)
 
-	// TODO: handle bad channel names
-	channel = getSlackChannelByName(config.Slack.Channel)
+	_channel, err := getSlackChannelByName(config.Slack.Channel)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	channel = _channel
+	log.Printf("INFO {channel=%s} channel found", channel.ID)
 
 	http.HandleFunc("/sink-slack", sinkSlackHandler)
 	log.Fatal(http.ListenAndServe(":3000", nil))
@@ -66,21 +71,22 @@ func sinkSlackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getSlackChannelByName(name string) slack.Channel {
+func getSlackChannelByName(name string) (slack.Channel, error) {
 	// TODO: find channels more cleanly
-	var sc slack.Channel
-
-	params := slack.GetConversationsParameters{}
-	channels, _, err := api.GetConversations(&params)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, c := range channels {
-		if c.Name == name {
-			sc = c
+	params := slack.GetConversationsParameters{ExcludeArchived: true}
+	cur := "start"
+	for cur != "" {
+		channels, cur, err := api.GetConversations(&params)
+		if err != nil {
+			return slack.Channel{}, err
 		}
+		for _, c := range channels {
+			if c.Name == name {
+				return c, nil
+			}
+		}
+		params.Cursor = cur
 	}
 
-	return sc
+	return slack.Channel{}, fmt.Errorf("no matching channel found")
 }
