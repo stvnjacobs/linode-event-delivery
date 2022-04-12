@@ -89,7 +89,7 @@ func listLinodeEventsSince(linode linodego.Client, since time.Time) ([]linodego.
 func (service IngestService) Start(source source) {
 	client := createLinodeClient(source)
 
-	lastRun := time.Now()
+	lastRun := time.Now().UTC()
 
 	interval, err := time.ParseDuration(source.Interval)
 	if err != nil {
