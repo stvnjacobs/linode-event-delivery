@@ -8,6 +8,10 @@ Pulls events and forwards them to configured sink.
 
 #### Configuration
 
+The default config path is `/etc/source/source.toml`.
+
+The path can be overwritten by updating `LINODE_EVENT_SOURCE_CONFIG`.
+
 ``` toml
 # file: /etc/source/source.toml
 

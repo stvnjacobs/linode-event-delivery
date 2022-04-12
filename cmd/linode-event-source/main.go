@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -117,9 +118,19 @@ func (service IngestService) Start(source source) {
 	}
 }
 
+// https://stackoverflow.com/a/40326580
+func getenv(key, fallback string) string {
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return fallback
+	}
+	return value
+}
+
 func main() {
 	// config
-	if _, err := toml.DecodeFile("/etc/source/source.toml", &config); err != nil {
+	configPath := getenv("LINODE_EVENT_SOURCE_CONFIG", "/etc/source/source.toml")
+	if _, err := toml.DecodeFile(configPath, &config); err != nil {
 		log.Fatal(err)
 	}
 
