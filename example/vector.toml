@@ -16,10 +16,7 @@
 
 data_dir = "/var/lib/vector"
 
-# Input data. Change me to a valid input source.
-[sources.stdin]
-  type = "stdin"
-
+# Input data
 [sources.socket]
   type = "socket"
   mode = "tcp"
@@ -35,16 +32,8 @@ data_dir = "/var/lib/vector"
 # Output data
 [sinks.console]
   type     = "console"
-  inputs   = ["stdin", "json"]
+  inputs   = ["json"]
   encoding = "text"
-
-[sinks.elasticsearch]
-  type        = "elasticsearch"
-  inputs      = ["json"]
-  healthcheck = true
-  endpoint    = "http://elasticsearch:9200"
-  bulk.action = "create"
-  bulk.index  = "linode-account-events-%F"
 
 [sinks.slack]
   type        = "http"
