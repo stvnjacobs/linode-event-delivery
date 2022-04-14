@@ -30,7 +30,3 @@ services:
 
 networks:
   backend:
-
-volumes:
-  es-data:
-    driver: local
