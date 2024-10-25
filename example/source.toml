@@ -1,5 +1,5 @@
 [source]
-url = "https://api.linode.com/v4"
+url = "api.linode.com"
 token = "CHANGEME"
 interval = "10s" # https://golang.org/pkg/time/#ParseDuration
 

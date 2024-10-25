@@ -68,6 +68,7 @@ func createLinodeClient(config source) linodego.Client {
 
 	client := linodego.NewClient(oauth2Client)
 	//client.SetDebug(true)
+	client.SetBaseURL(config.URL)
 
 	return client
 }
