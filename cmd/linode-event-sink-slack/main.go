@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,7 +31,10 @@ var channel slack.Channel
 
 func main() {
 	// config
-	if _, err := toml.DecodeFile("/etc/sink/sink.toml", &config); err != nil {
+	configPath := flag.String("config", "/etc/sink/sink.toml", "path to toml configuration file for sink")
+	flag.Parse()
+
+	if _, err := toml.DecodeFile(*configPath, &config); err != nil {
 		log.Fatal(err)
 	}
 

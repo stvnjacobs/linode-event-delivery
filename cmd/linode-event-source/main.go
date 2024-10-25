@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -129,8 +130,10 @@ func getenv(key, fallback string) string {
 
 func main() {
 	// config
-	configPath := getenv("LINODE_EVENT_SOURCE_CONFIG", "/etc/source/source.toml")
-	if _, err := toml.DecodeFile(configPath, &config); err != nil {
+	configPath := flag.String("config", "/etc/source/source.toml", "path to toml configuration file for source")
+	flag.Parse()
+
+	if _, err := toml.DecodeFile(*configPath, &config); err != nil {
 		log.Fatal(err)
 	}
 
