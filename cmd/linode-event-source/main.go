@@ -69,6 +69,7 @@ func createLinodeClient(config source) linodego.Client {
 	client := linodego.NewClient(oauth2Client)
 	//client.SetDebug(true)
 	client.SetBaseURL(config.URL)
+	client.SetUserAgent("linode-event-source https://github.com/stvnjacobs/linode-event-delivery")
 
 	return client
 }
